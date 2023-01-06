@@ -1,0 +1,52 @@
+name: Build LaTeX to PDF
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build PDF
+        run: pdflatex main.tex
+      - name: Output PDF
+        uses: actions/upload-artifact@v2
+        with:
+          name: main.pdf
+          path: main.pdf
+      - name: Get latest release tag
+        id: latest_release_tag
+        run: |
+          TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
+          echo ::set-output name=tag::${TAG}
+      - name: Extract version number from tag
+        id: version_number
+        run: |
+          TAG=$(echo ${{ steps.latest_release_tag.outputs.tag }} | cut -d'.' -f1)
+          echo ::set-output name=version::${TAG}
+      - name: Increment version number
+        id: incremented_version
+        run: |
+          NEW_TAG=$(( ${{ steps.version_number.outputs.version }} + 1 ))
+          echo ::set-output name=new_tag::${NEW_TAG}
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.incremented_version.outputs.new_tag }}
+          release_name: Release v${{ steps.incremented_version.outputs.new_tag }}
+          draft: false
+          prerelease: false
+      - name: Upload PDF to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.output }}
+          asset_path: main.pdf
+          asset_name: main.pdf
+          asset_content_type: application/pdf
