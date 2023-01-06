@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Build PDF
-        run: pdflatex main.tex
+        run: sudo apt-get install texlive-latex-base && pdflatex main.tex
       - name: Output PDF
         uses: actions/upload-artifact@v2
         with:
