@@ -1,18 +1,30 @@
-name: Build LaTeX to PDF
+name: Build LaTeX to PDF and Create Release
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install LaTeX
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y texlive-latex-base
+
       - name: Build PDF
-        run: sudo apt-get install texlive-latex-base && pdflatex main.tex
-      - name: Output PDF
-        uses: actions/upload-artifact@v2
+        run: pdflatex main.tex
+
+      - name: Rename PDF
+        run: mv main.pdf output.pdf
+
+      - name: Upload PDF as Release Asset
+        uses: softprops/action-gh-release@v1
         with:
-          name: main.pdf
-          path: main.pdf
+          files: output.pdf
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
